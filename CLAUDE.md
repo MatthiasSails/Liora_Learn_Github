@@ -44,7 +44,7 @@ corolla-run/
 └── index.html          # Toyota Corolla dodge game (single-file HTML/CSS/JS)
 ```
 
-**Live URL:** http://liora-vm-mk.duckdns.org:8080
+**Live URL:** http://liora-vm.matthiaskoehler.com:8080
 
 **Deploy after a change:**
 ```bash
@@ -52,7 +52,7 @@ git push
 bash corolla-run/deploy.sh
 ```
 
-The deploy script SSHs into Liora_VM (`ubuntu@liora-vm-mk.duckdns.org`, key `~/.ssh/data_enginering_machine.pem`), pulls the latest commit, and restarts the container via `docker compose up --build`.
+The deploy script SSHs into Liora_VM (`ubuntu@liora-vm.matthiaskoehler.com`, key `~/.ssh/data_enginering_machine.pem`), pulls the latest commit, and restarts the container via `docker compose up --build`.
 
 **Note:** The repo is public on GitHub — required so the VM can `git clone` without credentials.
 

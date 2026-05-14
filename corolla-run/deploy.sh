@@ -34,4 +34,4 @@ docker compose ps
 EOF
 
 echo ""
-echo "Deployed! Open: http://liora-vm-mk.duckdns.org:8080"
+echo "Deployed! Open: http://liora-vm.matthiaskoehler.com:8080"

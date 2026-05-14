@@ -16,4 +16,4 @@ ssh Liora_VM "
   docker compose up -d
 "
 
-echo "Portainer Agent läuft auf liora-vm-mk.duckdns.org:9001"
+echo "Portainer Agent läuft auf liora-vm.matthiaskoehler.com:9001"
