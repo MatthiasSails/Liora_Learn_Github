@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daniel – Corolla Run</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #fff;
+    }
+    h1 { font-size: 1.4rem; letter-spacing: 0.15em; margin-bottom: 8px; color: #e8c840; }
+    #score-display { font-size: 1rem; color: #aaa; margin-bottom: 12px; }
+    canvas { border: 2px solid #333; border-radius: 8px; display: block; }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    #overlay h2 { font-size: 2rem; color: #e8c840; }
+    #overlay p { color: #aaa; font-size: 0.95rem; }
+    #overlay button {
+      margin-top: 8px;
+      padding: 10px 32px;
+      background: #e8c840;
+      color: #111;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #overlay button:hover { background: #ffd700; }
+  </style>
+</head>
+<body>
+  <h1>🚗 COROLLA RUN</h1>
+  <div id="score-display">Score: <span id="score">0</span> &nbsp;|&nbsp; Best: <span id="best">0</span></div>
+  <div style="position:relative">
+    <canvas id="c" width="400" height="600"></canvas>
+    <div id="overlay">
+      <h2>COROLLA RUN</h2>
+      <p>Toyota Corolla — überlebe den Verkehr!</p>
+      <button id="startBtn">STARTEN</button>
+      <p style="color:#555;font-size:0.8rem">← → oder A D zum Lenken</p>
+    </div>
+  </div>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+
+let score = 0, best = 0, speed = 3, frame = 0;
+let running = false;
+let keys = {};
+
+const laneW = W / 4;
+const lanes = [laneW*0.5, laneW*1.5, laneW*2.5, laneW*3.5];
+let marks = Array.from({length: 8}, (_, i) => ({ y: i * 90 }));
+let obs = [];
+let lastObs = 0;
+
+const player = { x: W/2, y: H - 120, w: 44, h: 80 };
+const COLORS = ["#c0392b","#2980b9","#27ae60","#8e44ad","#e67e22","#2c3e50"];
+
+function drawRoad() {
+  ctx.fillStyle = "#2c2c2c";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#888";
+  ctx.fillRect(0, 0, 6, H);
+  ctx.fillRect(W-6, 0, 6, H);
+  ctx.strokeStyle = "#f0e040";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([30, 20]);
+  for (let l = 1; l < 4; l++) {
+    ctx.beginPath();
+    ctx.moveTo(l * laneW, 0);
+    ctx.lineTo(l * laneW, H);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+function drawCar(x, y, w, h, color, flip) {
+  ctx.save();
+  if (flip) { ctx.translate(x, y); ctx.scale(1, -1); ctx.translate(-x, -y); }
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x - w/2, y - h/2, w, h, 6);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(180,220,255,0.7)";
+  ctx.beginPath();
+  ctx.roundRect(x - w/2 + 5, y - h/2 + 10, w - 10, h*0.28, 3);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(180,220,255,0.5)";
+  ctx.beginPath();
+  ctx.roundRect(x - w/2 + 6, y + h/2 - 10 - h*0.2, w - 12, h*0.18, 3);
+  ctx.fill();
+
+  ctx.fillStyle = "#111";
+  const wr = 7, wx = w/2 - 3;
+  [[x-wx, y-h/2+14],[x+wx, y-h/2+14],[x-wx, y+h/2-14],[x+wx, y+h/2-14]].forEach(([px,py]) => {
+    ctx.beginPath(); ctx.arc(px, py, wr, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#555"; ctx.lineWidth=2; ctx.stroke();
+  });
+
+  ctx.fillStyle = "#ffe87c";
+  ctx.fillRect(x - w/2 + 4, y - h/2, 8, 5);
+  ctx.fillRect(x + w/2 - 12, y - h/2, 8, 5);
+
+  ctx.strokeStyle = "#e8c840";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y - h/2 + 7, 5, 0, Math.PI*2); ctx.stroke();
+
+  ctx.restore();
+}
+
+function spawnObs() {
+  const lane = Math.floor(Math.random() * 4);
+  obs.push({ x: lanes[lane], y: -90, color: COLORS[Math.floor(Math.random() * COLORS.length)] });
+}
+
+function update() {
+  frame++;
+  speed = 3 + score * 0.004;
+  marks.forEach(m => { m.y += speed; if (m.y > H) m.y -= 720; });
+
+  if (frame - lastObs > Math.max(40, 90 - score * 0.3)) {
+    spawnObs(); lastObs = frame;
+  }
+
+  obs.forEach(o => o.y += speed);
+  obs = obs.filter(o => o.y < H + 100);
+
+  if (keys["ArrowLeft"] || keys["a"] || keys["A"]) player.x = Math.max(28, player.x - 4);
+  if (keys["ArrowRight"] || keys["d"] || keys["D"]) player.x = Math.min(W-28, player.x + 4);
+
+  for (const o of obs) {
+    if (Math.abs(o.x - player.x) < 38 && Math.abs(o.y - player.y) < 70) {
+      endGame(); return;
+    }
+  }
+
+  score++;
+  document.getElementById("score").textContent = Math.floor(score/10);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawRoad();
+  obs.forEach(o => drawCar(o.x, o.y, 44, 80, o.color, true));
+  drawCar(player.x, player.y, player.w, player.h, "#e8c840", false);
+}
+
+function loop() {
+  if (!running) return;
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function startGame() {
+  score = 0; frame = 0; speed = 3; obs = [];
+  player.x = W/2; player.y = H - 120;
+  running = true;
+  document.getElementById("overlay").style.display = "none";
+  loop();
+}
+
+function endGame() {
+  running = false;
+  const s = Math.floor(score/10);
+  if (s > best) { best = s; document.getElementById("best").textContent = best; }
+  const ov = document.getElementById("overlay");
+  ov.innerHTML = '<h2>GAME OVER</h2><p>Score: ' + s + '</p><p>Best: ' + best + '</p><button id="startBtn">NOCHMAL</button><p style="color:#555;font-size:0.8rem">← → oder A D</p>';
+  ov.style.display = "flex";
+  document.getElementById("startBtn").onclick = startGame;
+}
+
+document.getElementById("startBtn").onclick = startGame;
+document.addEventListener("keydown", e => { keys[e.key] = true; });
+document.addEventListener("keyup", e => { keys[e.key] = false; });
+
+let touchX = null;
+canvas.addEventListener("touchstart", e => { touchX = e.touches[0].clientX; });
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  const dx = e.touches[0].clientX - touchX;
+  keys["ArrowLeft"] = dx < -10;
+  keys["ArrowRight"] = dx > 10;
+}, { passive: false });
+canvas.addEventListener("touchend", () => { keys["ArrowLeft"] = false; keys["ArrowRight"] = false; });
+
+drawRoad();
+drawCar(W/2, H-120, 44, 80, "#e8c840", false);
+</script>
+</body>
+</html>
