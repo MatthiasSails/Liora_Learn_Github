@@ -28,9 +28,33 @@ This is **not** a production repo. It exists to practice:
 
 ## What this repo is not
 
-- Not a place for real personal projects (those get their own repos).
 - Not a place for secrets, credentials, or anything you'd care about losing.
-- Not connected to any deployment or runtime — pure git practice ground.
+
+---
+
+## Deployed app: corolla-run
+
+This repo also contains a real Docker-based web app that runs on Liora_VM:
+
+```
+corolla-run/
+├── Dockerfile          # nginx:alpine image
+├── docker-compose.yml  # port 8080, restart unless-stopped
+├── deploy.sh           # pull from GitHub + docker compose up on Liora_VM
+└── index.html          # Toyota Corolla dodge game (single-file HTML/CSS/JS)
+```
+
+**Live URL:** http://108.129.115.52:8080
+
+**Deploy after a change:**
+```bash
+git push
+bash corolla-run/deploy.sh
+```
+
+The deploy script SSHs into Liora_VM (`ubuntu@108.129.115.52`, key `~/.ssh/data_enginering_machine.pem`), pulls the latest commit, and restarts the container via `docker compose up --build`.
+
+**Note:** The repo is public on GitHub — required so the VM can `git clone` without credentials.
 
 ---
 
