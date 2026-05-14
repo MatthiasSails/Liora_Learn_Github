@@ -13,11 +13,13 @@ APP_DIR="/home/ubuntu/corolla-run"
 echo "==> Connecting to Liora_VM..."
 ssh -i "$KEY" "$REMOTE" bash <<EOF
 set -euo pipefail
+export GIT_TERMINAL_PROMPT=0
 
 echo "==> Pulling latest code..."
-if [ -d "$APP_DIR" ]; then
+if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" pull
 else
+  rm -rf "$APP_DIR"
   git clone "$REPO" "$APP_DIR"
 fi
 
