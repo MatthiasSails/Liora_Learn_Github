@@ -37,6 +37,7 @@ This is **not** a production repo. It exists to practice:
 ```
 corolla-run/          # nginx-Webapp (Toyota Corolla dodge game)
 portainer-agent/      # Portainer Agent Stack + Cloudflare DDNS Script
+mongodb/              # MongoDB 7.0 Stack (DataScientest Training)
 docs/                 # Projektdokumentation und Zukunftspläne
 ```
 
@@ -70,6 +71,29 @@ Das deploy.sh nutzt den SSH-Alias `Liora_VM` (konfiguriert in `~/.ssh/config` au
 - **DDNS-Script:** `portainer-agent/cloudflare-ddns.sh`, Token in `~/.cf_ddns_token` auf der VM
 - **Portainer Agent** läuft auf Port 9001 (`portainer-agent/docker-compose.yml`)
 - **AWS Security Group:** `de_terminal` — wird von DataScientest verwaltet, kein Zugriff für Schulungsteilnehmer. Port 9001 ist nicht von außen erreichbar, daher kein Anschluss an Home-Portainer möglich. Siehe `docs/portainer-on-vm.md` für den Plan.
+
+---
+
+## MongoDB Stack
+
+```
+mongodb/
+├── docker-compose.yml   # mongo:7.0, Port 27017, Volume ./sample_training
+└── deploy.sh            # pull + docker compose up auf Liora_VM
+```
+
+**Deploy:**
+```bash
+git push
+bash mongodb/deploy.sh
+```
+
+**Verbinden:**
+```bash
+mongosh 'mongodb://datascientest:<password>@liora-vm.matthiaskoehler.com:27017'
+```
+
+Credentials sind Training-Defaults (DataScientest) — kein Produktiveinsatz.
 
 ---
 
