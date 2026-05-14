@@ -6,33 +6,28 @@
 #   @reboot sleep 15 && /home/ubuntu/Liora_Learn_Github/portainer-agent/cloudflare-ddns.sh
 #   */5 * * * * /home/ubuntu/Liora_Learn_Github/portainer-agent/cloudflare-ddns.sh
 
+set -euo pipefail
+
 TOKEN_FILE="$HOME/.cf_ddns_token"
 ZONE_NAME="matthiaskoehler.com"
 RECORD_NAME="liora-vm.matthiaskoehler.com"
 LOG="$HOME/.cf_ddns.log"
 
-if [ ! -f "$TOKEN_FILE" ]; then
-  echo "ERROR: Token-Datei nicht gefunden: $TOKEN_FILE"
-  echo "Anlegen mit: echo 'DEIN-CF-TOKEN' > $TOKEN_FILE && chmod 600 $TOKEN_FILE"
-  exit 1
-fi
+die() { echo "$(date): ERROR - $1" >> "$LOG"; echo "ERROR: $1"; exit 1; }
 
-TOKEN=$(cat "$TOKEN_FILE")
-IP=$(curl -sf https://api.ipify.org)
+[ -f "$TOKEN_FILE" ] || die "Token-Datei nicht gefunden: $TOKEN_FILE"
 
-if [ -z "$IP" ]; then
-  echo "$(date): ERROR - Public IP nicht ermittelbar" >> "$LOG"
-  exit 1
-fi
+TOKEN=$(cat "$TOKEN_FILE" | tr -d '[:space:]')
+IP=$(curl -s --max-time 10 https://api.ipify.org) || die "Public IP nicht ermittelbar"
+[ -n "$IP" ] || die "Public IP leer"
 
-ZONE_ID=$(curl -sf -X GET "https://api.cloudflare.com/client/v4/zones?name=$ZONE_NAME" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'][0]['id'])")
+cf() { curl -s --max-time 10 "$@" -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json"; }
 
-RECORD=$(curl -sf -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$RECORD_NAME" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json")
+ZONE_RESP=$(cf "https://api.cloudflare.com/client/v4/zones?name=$ZONE_NAME")
+ZONE_ID=$(echo "$ZONE_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id']) if d['success'] else exit(1)") \
+  || die "Zone nicht gefunden. API-Antwort: $ZONE_RESP"
 
+RECORD=$(cf "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=A&name=$RECORD_NAME")
 RECORD_ID=$(echo "$RECORD" | python3 -c "import sys,json; r=json.load(sys.stdin)['result']; print(r[0]['id']) if r else print('')")
 CURRENT_IP=$(echo "$RECORD" | python3 -c "import sys,json; r=json.load(sys.stdin)['result']; print(r[0]['content']) if r else print('')")
 
@@ -42,18 +37,12 @@ if [ "$IP" = "$CURRENT_IP" ]; then
 fi
 
 if [ -z "$RECORD_ID" ]; then
-  # Record anlegen
-  RESULT=$(curl -sf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-    -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
+  RESULT=$(cf -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
     --data "{\"type\":\"A\",\"name\":\"$RECORD_NAME\",\"content\":\"$IP\",\"ttl\":60,\"proxied\":false}")
 else
-  # Record aktualisieren
-  RESULT=$(curl -sf -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
-    -H "Authorization: Bearer $TOKEN" \
-    -H "Content-Type: application/json" \
+  RESULT=$(cf -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
     --data "{\"content\":\"$IP\"}")
 fi
 
 SUCCESS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['success'])")
-echo "$(date): $CURRENT_IP → $IP | success=$SUCCESS" >> "$LOG"
+echo "$(date): ${CURRENT_IP:-neu} → $IP | success=$SUCCESS" >> "$LOG"
