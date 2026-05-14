@@ -32,6 +32,14 @@ This is **not** a production repo. It exists to practice:
 
 ---
 
+## Repo-Struktur
+
+```
+corolla-run/          # nginx-Webapp (Toyota Corolla dodge game)
+portainer-agent/      # Portainer Agent Stack + Cloudflare DDNS Script
+docs/                 # Projektdokumentation und Zukunftspläne
+```
+
 ## Deployed app: corolla-run
 
 This repo also contains a real Docker-based web app that runs on Liora_VM:
@@ -52,9 +60,16 @@ git push
 bash corolla-run/deploy.sh
 ```
 
-The deploy script SSHs into Liora_VM (`ubuntu@liora-vm.matthiaskoehler.com`, key `~/.ssh/data_enginering_machine.pem`), pulls the latest commit, and restarts the container via `docker compose up --build`.
+Das deploy.sh nutzt den SSH-Alias `Liora_VM` (konfiguriert in `~/.ssh/config` auf dem Mac).
 
 **Note:** The repo is public on GitHub — required so the VM can `git clone` without credentials.
+
+## Infrastructure: Liora_VM
+
+- **Hostname:** `liora-vm.matthiaskoehler.com` (Cloudflare DDNS, aktualisiert alle 5 min per Cron)
+- **DDNS-Script:** `portainer-agent/cloudflare-ddns.sh`, Token in `~/.cf_ddns_token` auf der VM
+- **Portainer Agent** läuft auf Port 9001 (`portainer-agent/docker-compose.yml`)
+- **AWS Security Group:** `de_terminal` — wird von DataScientest verwaltet, kein Zugriff für Schulungsteilnehmer. Port 9001 ist nicht von außen erreichbar, daher kein Anschluss an Home-Portainer möglich. Siehe `docs/portainer-on-vm.md` für den Plan.
 
 ---
 
