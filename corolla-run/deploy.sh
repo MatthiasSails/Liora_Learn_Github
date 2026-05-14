@@ -5,13 +5,12 @@ set -euo pipefail
 # Usage: ./deploy.sh
 # Requires: SSH key at ~/.ssh/data_enginering_machine.pem
 
-REMOTE="ubuntu@108.129.115.52"
-KEY="$HOME/.ssh/data_enginering_machine.pem"
+REMOTE="Liora_VM"
 REPO="https://github.com/MatthiasSails/Liora_Learn_Github.git"
 APP_DIR="/home/ubuntu/corolla-run"
 
 echo "==> Connecting to Liora_VM..."
-ssh -i "$KEY" "$REMOTE" bash <<EOF
+ssh "$REMOTE" bash <<EOF
 set -euo pipefail
 export GIT_TERMINAL_PROMPT=0
 
@@ -35,4 +34,4 @@ docker compose ps
 EOF
 
 echo ""
-echo "Deployed! Open: http://108.129.115.52:8080"
+echo "Deployed! Open: http://liora-vm-mk.duckdns.org:8080"

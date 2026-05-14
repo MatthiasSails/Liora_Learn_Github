@@ -3,12 +3,10 @@
 # Danach wird der Agent über Home-Portainer (GitOps) verwaltet.
 set -e
 
-REMOTE="ubuntu@108.129.115.52"
-KEY="$HOME/.ssh/data_enginering_machine.pem"
 REPO="https://github.com/MatthiasSails/Liora_Learn_Github.git"
 DIR="/home/ubuntu/Liora_Learn_Github"
 
-ssh -i "$KEY" "$REMOTE" "
+ssh Liora_VM "
   if [ ! -d '$DIR' ]; then
     git clone $REPO $DIR
   else
@@ -18,4 +16,4 @@ ssh -i "$KEY" "$REMOTE" "
   docker compose up -d
 "
 
-echo "Portainer Agent läuft auf 108.129.115.52:9001"
+echo "Portainer Agent läuft auf liora-vm-mk.duckdns.org:9001"
