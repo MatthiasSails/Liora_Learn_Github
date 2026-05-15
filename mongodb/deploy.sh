@@ -35,4 +35,4 @@ EOF
 
 echo ""
 echo "MongoDB läuft auf Liora_VM:27017"
-echo "Verbinden: mongosh 'mongodb://datascientest:<password>@liora-vm.matthiaskoehler.com:27017'"
+echo "Verbinden: mongosh 'mongodb://<user>:<password>@liora-vm.matthiaskoehler.com:27017'"

@@ -90,10 +90,10 @@ bash mongodb/deploy.sh
 
 **Verbinden:**
 ```bash
-mongosh 'mongodb://datascientest:<password>@liora-vm.matthiaskoehler.com:27017'
+mongosh 'mongodb://<user>:<password>@liora-vm.matthiaskoehler.com:27017'
 ```
 
-Credentials sind Training-Defaults (DataScientest) — kein Produktiveinsatz.
+Credentials sind Training-Defaults (DataScientest, siehe docker-compose.yml) — kein Produktiveinsatz.
 
 ---
 
