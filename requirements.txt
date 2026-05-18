@@ -1,0 +1,11 @@
+# DataScientest – lokale Lernumgebung
+# Entspricht dem typischen Stack im Data Engineering Bootcamp
+
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+scipy
+jupyterlab
+ipykernel      # VS Code Notebook-Integration
